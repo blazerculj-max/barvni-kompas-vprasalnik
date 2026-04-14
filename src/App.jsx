@@ -83,18 +83,17 @@ export default function App() {
     setError('')
     try {
       const scores = calcScores(answers)
-      await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
+      const params = new URLSearchParams({
+        ime, email, podjetje, spol,
+        B: scores.B, G: scores.G, Y: scores.Y, R: scores.R,
+      })
+      await fetch(APPS_SCRIPT_URL + '?' + params.toString(), {
+        method: 'GET',
         mode: 'no-cors',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          ime, email, podjetje, spol,
-          B: scores.B, G: scores.G, Y: scores.Y, R: scores.R,
-        })
       })
       setStep('done')
     } catch(e) {
-      setError('Napaka pri posiljanju. Preverite internetno povezavo.')
+      setError('Napaka pri posiljanju.')
     }
     setSubmitting(false)
   }
