@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyLWEM-t8BfBjRQycLDQXgdONDYPoErftqhEA3ToQXVZ0k9ZCSTKVi3VdPc25vDPhNTAw/exec'
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwnSLsg7eOjkzCtDf-9k3hIOk8tkDWevMxhiue_R-pTiYyb_BSft93f6t1iSphstH16BA/exec'
 
 const SMAP = {L:0,'1':1,'2':2,'3':3,'4':4,'5':5,M:6}
 const N = 15
+const SN_N = 4  // število S/N vprašanj
 
 const QUESTIONS = [
   {B:'Natančen in diplomatski',R:'Usmerjen v rezultate in hiter',G:'Spodbujajoč in skrben',Y:'Odprt in družaben'},
@@ -21,6 +22,16 @@ const QUESTIONS = [
   {B:'Analitičen in temeljit',R:'Tekmovalen in odločen',G:'Nezahteven in odziven',Y:'Prijazen in zabaven'},
   {B:'Stabilen in pozoren',R:'Drzen in objektiven',G:'Razmišljujoč in temeljit',Y:'Vpliven in izrazit'},
   {B:'Previden in natančen',R:'Odkrit in neposreden',G:'Sprejemajoč in zvest',Y:'Optimističen in vesel'},
+]
+
+// S/N vprašanja — zaznavanje vs intuicija
+// Vsak sklop: S = zaznavanje, N = intuicija
+// Vrednosti: L=0, 1=1, 2=2, 3=3, 4=4, 5=5, M=6
+const SN_QUESTIONS = [
+  {S:'Osredotočam se na konkretna dejstva in podrobnosti',N:'Iščem vzorce in skrite možnosti za dejstvi'},
+  {S:'Zaupam preizkušenim metodam in preteklim izkušnjam',N:'Rad preizkušam nove pristope in nepreizkušene ideje'},
+  {S:'Živim v sedanjosti in rešujem aktualne probleme',N:'Razmišljam o prihodnosti in možnostih ki še niso'},
+  {S:'Pri odločanju se oprem na konkretne podatke in dokaze',N:'Pri odločanju pogosto sledim notranjemu občutku'},
 ]
 
 const CLR = {B:'#4a7ab5',R:'#c94030',G:'#2e8a55',Y:'#c49a10'}
@@ -74,11 +85,50 @@ export default function App() {
   const [podjetje, setPodjetje] = useState('')
   const [spol, setSpol] = useState('m')
   const [answers, setAnswers] = useState(Array(15).fill(null).map(()=>({B:null,R:null,G:null,Y:null})))
+  const [snAnswers, setSnAnswers] = useState(Array(4).fill(null).map(()=>({S:null,N:null})))
+  const [snStep, setSnStep] = useState(0) // 0=barvna vprašanja, 1=SN vprašanja
   const [current, setCurrent] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
   const orders = QUESTIONS.map((_,i)=>shuffle(COLORS,i*999+42))
+
+  function setSnVal(qi, side, val) {
+    setSnAnswers(prev=>{
+      const next = prev.map(a=>({...a}))
+      // Toggle
+      if(next[qi][side] === val) { next[qi][side] = null; return next }
+      // Počisti drugo stran če enaka vrednost
+      Object.keys(next[qi]).forEach(k=>{ if(next[qi][k]===val) next[qi][k]=null })
+      next[qi][side] = val
+      return next
+    })
+  }
+
+  function validateSN(ans) {
+    const v = Object.values(ans).filter(x=>x!==null)
+    if(v.length < 2) return 'incomplete'
+    const lc = v.filter(x=>x==='L').length
+    const mc = v.filter(x=>x==='M').length
+    if(lc!==1) return lc+'x L'
+    if(mc!==1) return mc+'x M'
+    if(new Set(v).size!==2) return 'Vrednosti niso različne'
+    return 'ok'
+  }
+
+  function calcSN(snAnswers) {
+    let sRaw = 0, nRaw = 0
+    snAnswers.forEach(a=>{
+      sRaw += SMAP[a.S] || 0
+      nRaw += SMAP[a.N] || 0
+    })
+    const sScore = parseFloat((sRaw / SN_N).toFixed(2))
+    const nScore = parseFloat((nRaw / SN_N).toFixed(2))
+    const diff = nScore - sScore
+    if(diff >= 0.5) return {type:'N', score:nScore, label:'Intuicija', diff:parseFloat(diff.toFixed(2))}
+    if(diff <= -0.5) return {type:'S', score:sScore, label:'Zaznavanje', diff:parseFloat(Math.abs(diff).toFixed(2))}
+    return {type:'U', score:Math.max(sScore,nScore), label:'Uravnotežen', diff:parseFloat(Math.abs(diff).toFixed(2))}
+  }
 
   function setVal(qi,color,val) {
     setAnswers(prev=>{
@@ -92,8 +142,14 @@ export default function App() {
   async function handleSubmit() {
     setSubmitting(true); setError('')
     try {
-      const scores=calcScores(answers)
-      const params=new URLSearchParams({ime,email,podjetje,spol,B:scores.B,G:scores.G,Y:scores.Y,R:scores.R})
+      const scores = calcScores(answers)
+      const snResult = calcSN(snAnswers)
+      const snStr = snResult.type==='U' ? 'U='+snResult.score : snResult.type+'='+snResult.score
+      const params = new URLSearchParams({
+        ime, email, podjetje, spol,
+        B: scores.B, G: scores.G, Y: scores.Y, R: scores.R,
+        SN: snStr
+      })
       await fetch(APPS_SCRIPT_URL+'?'+params.toString(),{method:'GET',mode:'no-cors'})
       setStep('done')
     } catch(e) { setError('Napaka pri pošiljanju. Poskusite znova.') }
@@ -213,6 +269,87 @@ export default function App() {
   )
 
   // ── QUESTIONNAIRE ─────────────────────────────────────────────────────────
+  // SN vprašalnik — prikaže se po barvnih vprašanjih
+  if(step==='sn') {
+    const allSnDone = snAnswers.every(a=>validateSN(a)==='ok')
+    return (
+      <div style={{fontFamily:'system-ui,sans-serif',minHeight:'100vh',background:'#fafaf8',padding:'16px 16px 56px'}}>
+        <style>{CSS}</style>
+        <div style={{maxWidth:560,margin:'0 auto'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <ColorWheel size={28}/>
+              <span style={{fontFamily:'Georgia,serif',fontSize:13,fontWeight:700,color:'#1a1a1a'}}>Barvni kompas</span>
+            </div>
+            <div style={{fontSize:12,color:'#888',fontWeight:600,background:'white',border:'1px solid #e8e4df',padding:'4px 10px',borderRadius:20}}>2. del · 4 vprašanja</div>
+          </div>
+          <div style={{marginBottom:18}}>
+            <div style={{height:4,background:'#e5e0d8',borderRadius:4,overflow:'hidden',marginBottom:5}}>
+              <div style={{height:'100%',background:'#1a1a1a',width:'100%',borderRadius:4}}/>
+            </div>
+            <div style={{fontSize:10,color:'#bbb'}}>Barvna vprašanja končana · Zdaj: stil zaznavanja</div>
+          </div>
+          <div style={{background:'white',borderRadius:16,padding:'18px',marginBottom:12,border:'1px solid #e8e4df',boxShadow:'0 2px 16px rgba(0,0,0,.04)'}}>
+            <div style={{fontSize:10,fontWeight:700,color:'#aaa',textTransform:'uppercase',letterSpacing:'.1em',marginBottom:10}}>Stil zaznavanja</div>
+            <div style={{fontSize:11,color:'#888',lineHeight:1.65,marginBottom:14,padding:'9px 12px',background:'#f9f7f4',borderRadius:8}}>
+              Za vsak par trditev označite katera vam je bolj podobna (<strong style={{color:'#1a1a1a'}}>M</strong>) in katera najmanj (<strong style={{color:'#1a1a1a'}}>L</strong>). Vrednosti <strong style={{color:'#1a1a1a'}}>1-5</strong> za vmesne stopnje.
+            </div>
+            {SN_QUESTIONS.map((q,qi)=>{
+              const a = snAnswers[qi]
+              const snVals = ['L','1','2','3','4','5','M']
+              return (
+                <div key={qi} style={{marginBottom:12,padding:'12px 13px',background:'#f9f7f4',borderRadius:12,border:'1.5px solid '+(validateSN(a)==='ok'?'#1a1a1a':'transparent'),transition:'border-color .15s'}}>
+                  <div style={{fontSize:10,fontWeight:700,color:'#aaa',marginBottom:10}}>Sklop {qi+1}</div>
+                  {['S','N'].map(side=>(
+                    <div key={side} style={{marginBottom:side==='S'?10:0}}>
+                      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:7}}>
+                        <div style={{width:8,height:8,borderRadius:'50%',background:a[side]?'#1a1a1a':'#d8d3cc',flexShrink:0,transition:'background .15s'}}/>
+                        <div style={{fontSize:12,color:'#1a1a1a',fontWeight:a[side]?600:400,flex:1,lineHeight:1.4}}>{q[side]}</div>
+                        {a[side]&&<div style={{fontSize:9,fontWeight:800,color:'#1a1a1a',background:'#e5e0d8',padding:'2px 8px',borderRadius:20,flexShrink:0}}>
+                          {a[side]==='L'?'NAJMANJ':a[side]==='M'?'NAJBOLJ':a[side]}
+                        </div>}
+                      </div>
+                      <div style={{display:'flex',gap:4}}>
+                        {snVals.map(v=>{
+                          const isSel=a[side]===v
+                          const isUsed=!isSel&&Object.values(a).includes(v)
+                          return (
+                            <button key={v} onClick={()=>setSnVal(qi,side,v)} style={{
+                              flex:1,height:30,borderRadius:7,border:'none',
+                              background:isSel?'#1a1a1a':isUsed?'#ede9e3':'#e5e0d8',
+                              color:isSel?'white':isUsed?'#ccc':'#666',
+                              fontWeight:700,fontSize:11,cursor:isUsed?'default':'pointer',fontFamily:'inherit',
+                              boxShadow:isSel?'0 2px 8px rgba(0,0,0,0.2)':'none',
+                              transition:'all .1s',opacity:isUsed?0.45:1
+                            }}>{v}</button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+          <div style={{display:'flex',gap:10,marginBottom:14}}>
+            <button onClick={()=>setStep('questionnaire')} style={{padding:'12px 18px',background:'white',border:'1.5px solid #e5e0d8',borderRadius:12,fontSize:13,color:'#555',cursor:'pointer',fontFamily:'inherit',fontWeight:500}}>← Nazaj</button>
+            <div style={{flex:1}}/>
+            <button className="btn-primary" onClick={handleSubmit} disabled={!allSnDone||submitting} style={{
+              padding:'12px 24px',background:allSnDone&&!submitting?'#2e8a55':'#ddd',
+              color:allSnDone&&!submitting?'white':'#aaa',border:'none',borderRadius:12,
+              fontSize:13,fontWeight:600,cursor:allSnDone&&!submitting?'pointer':'default',fontFamily:'inherit'
+            }}>{submitting?'Pošiljam...':'✓ Oddaj vprašalnik'}</button>
+          </div>
+          <div style={{display:'flex',justifyContent:'center',gap:5}}>
+            {SN_QUESTIONS.map((_,i)=>(
+              <div key={i} style={{width:8,height:8,borderRadius:'50%',background:validateSN(snAnswers[i])==='ok'?'#2e8a55':'#e5e0d8',transition:'background .2s'}}/>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if(step==='questionnaire') {
     const q=QUESTIONS[current], a=answers[current], order=orders[current]
     const vstat=validate(a)
@@ -284,8 +421,8 @@ export default function App() {
             {current<QUESTIONS.length-1?(
               <button className="btn-primary" onClick={()=>vstat==='ok'&&setCurrent(c=>c+1)} disabled={vstat!=='ok'} style={{padding:'12px 24px',background:vstat==='ok'?'#1a1a1a':'#ddd',color:vstat==='ok'?'white':'#aaa',border:'none',borderRadius:12,fontSize:13,fontWeight:600,cursor:vstat==='ok'?'pointer':'default',fontFamily:'inherit'}}>Naprej →</button>
             ):(
-              <button className="btn-primary" onClick={handleSubmit} disabled={!allDone||submitting} style={{padding:'12px 24px',background:allDone&&!submitting?'#2e8a55':'#ddd',color:allDone&&!submitting?'white':'#aaa',border:'none',borderRadius:12,fontSize:13,fontWeight:600,cursor:allDone&&!submitting?'pointer':'default',fontFamily:'inherit'}}>
-                {submitting?'Pošiljam...':'✓ Oddaj vprašalnik'}
+              <button className="btn-primary" onClick={()=>allDone&&setStep('sn')} disabled={!allDone} style={{padding:'12px 24px',background:allDone?'#1a1a1a':'#ddd',color:allDone?'white':'#aaa',border:'none',borderRadius:12,fontSize:13,fontWeight:600,cursor:allDone?'pointer':'default',fontFamily:'inherit'}}>
+                Nadaljuj →
               </button>
             )}
           </div>
