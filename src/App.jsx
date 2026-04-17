@@ -6,21 +6,21 @@ const SMAP = {L:0,'1':1,'2':2,'3':3,'4':4,'5':5,M:6}
 const N = 15
 
 const QUESTIONS = [
-  {B:'Sem natančen in metodičen',R:'Sem odločen in usmerjen v rezultate',G:'Sem empatičen in skrbim za odnose',Y:'Sem entuziastičen in optimističen'},
-  {B:'Raje analiziram preden ukrepam',R:'Hitro ukrepam in sprejemam odločitve',G:'Poslušam in razumem druge',Y:'Iščem nove ideje in možnosti'},
-  {B:'Cenim kakovost in natančnost',R:'Cenim učinkovitost in hitrost',G:'Cenim harmonijo in sodelovanje',Y:'Cenim ustvarjalnost in inovacije'},
-  {B:'V konfliktih ostanem miren in analitičen',R:'V konfliktih sem direkten in odločen',G:'V konfliktih iščem kompromis',Y:'V konfliktih poskušam razbremeniti napetost'},
-  {B:'Načrtujem skrbno vnaprej',R:'Osredotočam se na cilje',G:'Gradim zaupanje postopoma',Y:'Sledim navdihu in spontanosti'},
-  {B:'Prednost dajem dejstvom in podatkom',R:'Prednost dajem rezultatom',G:'Prednost dajem ljudem',Y:'Prednost dajem viziji'},
-  {B:'Sem sistematičen in organiziran',R:'Sem ambiciozen in pogumen',G:'Sem zvest in zanesljiv',Y:'Sem komunikativen in navdušujoč'},
-  {B:'Raje delam samostojno in poglobljeno',R:'Raje vodim in usmerjam',G:'Raje sodelujem in podpiram',Y:'Raje navdušujem in motiviram'},
-  {B:'Cenim strukturo in red',R:'Cenim nadzor in moč',G:'Cenim mir in stabilnost',Y:'Cenim zabavo in raznolikost'},
-  {B:'Pod pritiskom postanem previdnejši',R:'Pod pritiskom sem bolj direkten',G:'Pod pritiskom se umaknem',Y:'Pod pritiskom dramatiziram'},
-  {B:'Odločitve sprejemam na podlagi analize',R:'Odločitve sprejemam hitro in intuitivno',G:'Odločitve sprejemam po posvetovanju',Y:'Odločitve sprejemam na podlagi navdiha'},
-  {B:'Moja moč je v natančnosti',R:'Moja moč je v odločnosti',G:'Moja moč je v empatiji',Y:'Moja moč je v kreativnosti'},
-  {B:'Cenim mir in tišino pri delu',R:'Cenim izzive in tekmovalnost',G:'Cenim toplino in sprejetost',Y:'Cenim dinamično okolje'},
-  {B:'Sem introvertirane narave z željo po podrobni analizi',R:'Sem ekstrovertirane narave z močno voljo',G:'Sem introvertirane narave s toplim srcem',Y:'Sem ekstrovertirane narave s pozitivno energijo'},
-  {B:'Iščem globino in razumevanje',R:'Iščem rezultate in dosežke',G:'Iščem harmonijo in smisel',Y:'Iščem navdih in možnosti'},
+  {B:'Natančen in diplomatski',R:'Usmerjen v rezultate in hiter',G:'Spodbujajoč in skrben',Y:'Odprt in družaben'},
+  {B:'Zbran in pozoren na podrobnosti',R:'Aktiven in odločen',G:'Diplomatski in pomirjujoč',Y:'Živahen in spontan'},
+  {B:'Zanesljiv in zadržan',R:'Odločen in ciljno usmerjen',G:'Prijazen in potrpežljiv',Y:'Prepričljiv in živahen'},
+  {B:'Miren in zmeren',R:'Odločen in neposreden',G:'Optimističen in brezskrben',Y:'Natančen in precizen'},
+  {B:'Sistematičen in jedrnat',R:'Samozavesten in energičen',G:'Prijeten in stabilen',Y:'Zgovoren in prijazen'},
+  {B:'Logičen in jasen',R:'Neposreden in odločen',G:'Zvest in prilagodljiv',Y:'Družaben in komunikativen'},
+  {B:'Premišljen in samozadosten',R:'Odločen in pogumen',G:'Povezujoč in prilagodljiv',Y:'Izrazit in poln upanja'},
+  {B:'Razmišljujoč in analitičen',R:'Vztrajen in samozavesten',G:'Stabilen in skrben',Y:'Prepričljiv in navdušujoč'},
+  {B:'Dosleden in natančen',R:'Odločen in samozavesten',G:'Zvest in pripravljen pomagati',Y:'Družaben in vesel'},
+  {B:'Previden in premišljen',R:'Hiter in ciljno naravnan',G:'Pozoren in empatičen',Y:'Spontan in navdušen'},
+  {B:'Odgovoren in strukturiran',R:'Odločen in tekmovalen',G:'Zadržan in sodelovalen',Y:'Odprt in komunikativen'},
+  {B:'Natančen in racionalen',R:'Usmerjen v nalogo in neposreden',G:'Zmeren in prijazen',Y:'Ustvarjalen in ekipno usmerjen'},
+  {B:'Analitičen in temeljit',R:'Tekmovalen in odločen',G:'Nezahteven in odziven',Y:'Prijazen in zabaven'},
+  {B:'Stabilen in pozoren',R:'Drzen in objektiven',G:'Razmišljujoč in temeljit',Y:'Vpliven in izrazit'},
+  {B:'Previden in natančen',R:'Odkrit in neposreden',G:'Sprejemajoč in zvest',Y:'Optimističen in vesel'},
 ]
 
 const CLR = {B:'#4a7ab5',R:'#c94030',G:'#2e8a55',Y:'#c49a10'}
