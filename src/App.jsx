@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyLWEM-t8BfBjRQycLDQXgdONDYPoErftqhEA3ToQXVZ0k9ZCSTKVi3VdPc25vDPhNTAw/exec'
 
@@ -23,26 +23,27 @@ const QUESTIONS = [
   {B:'Iščem globino in razumevanje',R:'Iščem rezultate in dosežke',G:'Iščem harmonijo in smisel',Y:'Iščem navdih in možnosti'},
 ]
 
+const CLR = {B:'#4a7ab5',R:'#c94030',G:'#2e8a55',Y:'#c49a10'}
+const CLR_L = {B:'#e8f0fa',R:'#faeaea',G:'#e6f5ee',Y:'#fdf6e3'}
+const CLR_NAME = {B:'Cool Blue',R:'Fiery Red',G:'Earth Green',Y:'Sunshine Yellow'}
 const COLORS = ['B','R','G','Y']
 
 function shuffle(arr, seed) {
-  const a = [...arr]
-  let s = seed
+  const a = [...arr]; let s = seed
   for(let i=a.length-1;i>0;i--){
-    s = (s*1664525+1013904223)&0xffffffff
-    const j=Math.abs(s)%(i+1)
-    ;[a[i],a[j]]=[a[j],a[i]]
+    s=(s*1664525+1013904223)&0xffffffff
+    const j=Math.abs(s)%(i+1);[a[i],a[j]]=[a[j],a[i]]
   }
   return a
 }
 
 function validate(ans) {
-  const v = Object.values(ans).filter(x=>x!==null)
+  const v=Object.values(ans).filter(x=>x!==null)
   if(v.length<4) return 'incomplete'
-  const lc=v.filter(x=>x==='L').length, mc=v.filter(x=>x==='M').length
+  const lc=v.filter(x=>x==='L').length,mc=v.filter(x=>x==='M').length
   if(lc!==1) return lc+'x L'
   if(mc!==1) return mc+'x M'
-  if(new Set(v).size!==4) return 'Vrednosti niso razlicne'
+  if(new Set(v).size!==4) return 'Vrednosti niso različne'
   return 'ok'
 }
 
@@ -54,8 +55,20 @@ function calcScores(answers) {
   return con
 }
 
+function ColorWheel({size=60}) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 60 60">
+      <path d="M30,30 L30,4 A26,26 0 0,1 56,30 Z" fill={CLR.R}/>
+      <path d="M30,30 L56,30 A26,26 0 0,1 30,56 Z" fill={CLR.Y}/>
+      <path d="M30,30 L30,56 A26,26 0 0,1 4,30 Z" fill={CLR.G}/>
+      <path d="M30,30 L4,30 A26,26 0 0,1 30,4 Z" fill={CLR.B}/>
+      <circle cx="30" cy="30" r="10" fill="white"/>
+    </svg>
+  )
+}
+
 export default function App() {
-  const [step, setStep] = useState('form')
+  const [step, setStep] = useState('intro')
   const [ime, setIme] = useState('')
   const [email, setEmail] = useState('')
   const [podjetje, setPodjetje] = useState('')
@@ -65,159 +78,262 @@ export default function App() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const orders = QUESTIONS.map((_,i) => shuffle(COLORS, i*999+42))
+  const orders = QUESTIONS.map((_,i)=>shuffle(COLORS,i*999+42))
 
-  function setVal(qi, color, val) {
-    setAnswers(prev => {
-      const next = prev.map(a=>({...a}))
-      Object.keys(next[qi]).forEach(k => {
-        if(next[qi][k]===val) next[qi][k]=null
-      })
-      next[qi][color] = val
+  function setVal(qi,color,val) {
+    setAnswers(prev=>{
+      const next=prev.map(a=>({...a}))
+      Object.keys(next[qi]).forEach(k=>{if(next[qi][k]===val)next[qi][k]=null})
+      next[qi][color]=val
       return next
     })
   }
 
   async function handleSubmit() {
-    setSubmitting(true)
-    setError('')
+    setSubmitting(true); setError('')
     try {
-      const scores = calcScores(answers)
-      const params = new URLSearchParams({
-        ime, email, podjetje, spol,
-        B: scores.B, G: scores.G, Y: scores.Y, R: scores.R,
-      })
-      await fetch(APPS_SCRIPT_URL + '?' + params.toString(), {
-        method: 'GET',
-        mode: 'no-cors',
-      })
+      const scores=calcScores(answers)
+      const params=new URLSearchParams({ime,email,podjetje,spol,B:scores.B,G:scores.G,Y:scores.Y,R:scores.R})
+      await fetch(APPS_SCRIPT_URL+'?'+params.toString(),{method:'GET',mode:'no-cors'})
       setStep('done')
-    } catch(e) {
-      setError('Napaka pri posiljanju.')
-    }
+    } catch(e) { setError('Napaka pri pošiljanju. Poskusite znova.') }
     setSubmitting(false)
   }
 
-  if(step==='done') return (
-    <div style={{fontFamily:'system-ui,sans-serif',minHeight:'100vh',background:'#f7f5f1',display:'flex',alignItems:'center',justifyContent:'center'}}>
-      <div style={{background:'white',borderRadius:20,padding:'48px 52px',maxWidth:480,textAlign:'center',boxShadow:'0 8px 40px rgba(0,0,0,.08)'}}>
-        <div style={{width:64,height:64,borderRadius:'50%',background:'#e6f5ee',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',fontSize:28}}>✓</div>
-        <div style={{fontFamily:'Georgia,serif',fontSize:24,fontWeight:600,marginBottom:12}}>Hvala, {ime.trim().split(' ')[0]}!</div>
-        <div style={{fontSize:15,color:'#6b6460',lineHeight:1.7,marginBottom:20}}>Vas vprasalnik je bil uspesno oddan. Vas osebnostni profil bomo pripravili in vam ga poslali na <strong>{email}</strong> v kratkem.</div>
-        <div style={{fontSize:12,color:'#aaa'}}>Insights Discovery · Osebnostni profil</div>
-      </div>
-    </div>
-  )
-
-  if(step==='form') return (
-    <div style={{fontFamily:'system-ui,sans-serif',minHeight:'100vh',background:'#f7f5f1',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px'}}>
-      <div style={{background:'white',borderRadius:20,padding:'40px 44px',maxWidth:460,width:'100%',boxShadow:'0 8px 40px rgba(0,0,0,.08)'}}>
-        <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:28}}>
-          <div style={{width:40,height:40,borderRadius:'50%',background:'conic-gradient(#4a7ab5 0deg 90deg,#c94030 90deg 180deg,#c49a10 180deg 270deg,#2e8a55 270deg 360deg)',flexShrink:0}}/>
-          <div>
-            <div style={{fontFamily:'Georgia,serif',fontSize:18,fontWeight:600}}>Insights Discovery</div>
-            <div style={{fontSize:12,color:'#888'}}>Osebnostni vprasalnik</div>
-          </div>
-        </div>
-        <div style={{fontSize:13,color:'#6b6460',lineHeight:1.7,marginBottom:24}}>Izpolnite vprasalnik in prejmite osebnostni profil, ki vam bo pomagal bolje razumeti vas stil dela, komunikacije in prodaje.</div>
-        {[
-          {id:'ime',label:'Ime in priimek',placeholder:'Jana Novak',val:ime,set:setIme},
-          {id:'email',label:'E-posta',placeholder:'jana@podjetje.si',val:email,set:setEmail},
-          {id:'podjetje',label:'Podjetje (neobvezno)',placeholder:'Podjetje d.o.o.',val:podjetje,set:setPodjetje},
-        ].map(f=>(
-          <div key={f.id} style={{marginBottom:14}}>
-            <div style={{fontSize:11,fontWeight:600,color:'#888',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>{f.label}</div>
-            <input type={f.id==='email'?'email':'text'} value={f.val} onChange={e=>f.set(e.target.value)} placeholder={f.placeholder}
-              style={{width:'100%',padding:'10px 14px',border:'1.5px solid #e5e0d8',borderRadius:10,fontSize:14,fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}/>
-          </div>
-        ))}
-        <div style={{marginBottom:20}}>
-          <div style={{fontSize:11,fontWeight:600,color:'#888',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>Spol</div>
-          <div style={{display:'flex',gap:8}}>
-            {[{v:'m',l:'Moski'},{v:'z',l:'Zenski'}].map(({v,l})=>(
-              <button key={v} onClick={()=>setSpol(v)}
-                style={{flex:1,padding:'10px',border:'1.5px solid '+(spol===v?'#181818':'#e5e0d8'),borderRadius:10,fontSize:14,fontFamily:'inherit',background:spol===v?'#181818':'white',color:spol===v?'white':'#444',cursor:'pointer',fontWeight:spol===v?600:400}}>
-                {l}
-              </button>
-            ))}
-          </div>
-        </div>
-        <button onClick={()=>{
-          if(!ime.trim()) return setError('Vnesite ime in priimek')
-          if(!email.trim()||!email.includes('@')) return setError('Vnesite veljaven e-mail')
-          setError(''); setStep('questionnaire')
-        }} style={{width:'100%',padding:'13px',background:'#181818',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:500,cursor:'pointer',fontFamily:'inherit'}}>
-          Zacni vprasalnik →
-        </button>
-        {error&&<div style={{color:'#c94030',fontSize:13,marginTop:10,textAlign:'center'}}>{error}</div>}
-        <div style={{marginTop:20,fontSize:11,color:'#bbb',textAlign:'center',lineHeight:1.6}}>Vprasalnik traja priblizno 5-8 minut.<br/>Vasi podatki so zasciteni in se ne delijo s tretjimi osebami.</div>
-      </div>
-    </div>
-  )
-
-  const q = QUESTIONS[current]
-  const a = answers[current]
-  const order = orders[current]
   const vals = ['L','1','2','3','4','5','M']
-  const vstat = validate(a)
-  const allDone = answers.every(ans=>validate(ans)==='ok')
+  const CSS = `
+    @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    .fu{animation:fadeUp .55s ease forwards}
+    .fu2{animation:fadeUp .55s .12s ease forwards;opacity:0}
+    .fu3{animation:fadeUp .55s .24s ease forwards;opacity:0}
+    .fu4{animation:fadeUp .55s .36s ease forwards;opacity:0}
+    input:focus{border-color:#1a1a1a !important;outline:none;background:white !important}
+    button{transition:all .12s ease}
+    .btn-primary:hover{opacity:.88;transform:translateY(-1px)}
+    .btn-nav:hover{border-color:#aaa}
+    .dot-btn:hover{opacity:.8}
+  `
 
-  return (
-    <div style={{fontFamily:'system-ui,sans-serif',minHeight:'100vh',background:'#f7f5f1',padding:'20px 20px 40px'}}>
-      <div style={{maxWidth:580,margin:'0 auto'}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <div style={{width:30,height:30,borderRadius:'50%',background:'conic-gradient(#4a7ab5 0deg 90deg,#c94030 90deg 180deg,#c49a10 180deg 270deg,#2e8a55 270deg 360deg)'}}/>
-            <span style={{fontFamily:'Georgia,serif',fontSize:14,fontWeight:600}}>Insights Discovery</span>
+  // ── INTRO ─────────────────────────────────────────────────────────────────
+  if(step==='intro') return (
+    <div style={{fontFamily:'system-ui,sans-serif',minHeight:'100vh',background:'#fafaf8',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
+      <style>{CSS}</style>
+      <div style={{maxWidth:480,width:'100%'}}>
+        <div className="fu" style={{display:'flex',alignItems:'center',gap:14,marginBottom:40}}>
+          <ColorWheel size={52}/>
+          <div>
+            <div style={{fontFamily:'Georgia,serif',fontSize:18,fontWeight:700,color:'#1a1a1a',letterSpacing:'-0.01em'}}>Insights Discovery</div>
+            <div style={{fontSize:12,color:'#aaa',marginTop:1}}>Osebnostni profil</div>
           </div>
-          <div style={{fontSize:12,color:'#888',fontWeight:500}}>{current+1} / {QUESTIONS.length}</div>
         </div>
-        <div style={{height:3,background:'#e5e0d8',borderRadius:2,marginBottom:20,overflow:'hidden'}}>
-          <div style={{height:'100%',background:'#181818',width:((current+1)/QUESTIONS.length*100)+'%',borderRadius:2,transition:'width .3s ease'}}/>
+        <div className="fu2">
+          <h1 style={{fontFamily:'Georgia,serif',fontSize:40,fontWeight:700,color:'#1a1a1a',lineHeight:1.05,marginBottom:18,letterSpacing:'-0.025em'}}>
+            Spoznajte<br/>svojo osebnost
+          </h1>
+          <p style={{fontSize:15,color:'#6b6460',lineHeight:1.8,marginBottom:32}}>
+            Vprašalnik temelji na Jungovi tipologiji in vam v 5–8 minutah razkrije vaš edinstveni osebnostni profil — kako razmišljate, komunicirate in delujete pod pritiskom.
+          </p>
         </div>
-        <div style={{background:'white',borderRadius:16,padding:'20px',marginBottom:12,boxShadow:'0 2px 12px rgba(0,0,0,.06)'}}>
-          <div style={{fontSize:10,fontWeight:700,color:'#aaa',textTransform:'uppercase',letterSpacing:'.1em',marginBottom:4}}>Sklop {current+1} od {QUESTIONS.length}</div>
-          <div style={{fontSize:12,color:'#888',marginBottom:16,lineHeight:1.5}}>Ocenite vsako trditev od <strong>L</strong> (najmanj podoben) do <strong>M</strong> (najbolj podoben). Vsaka vrednost samo enkrat.</div>
-          {order.map(k => (
-            <div key={k} style={{marginBottom:10,padding:'11px 13px',background:'#f9f7f4',borderRadius:10}}>
-              <div style={{fontSize:13,color:'#222',marginBottom:8,fontWeight:a[k]?600:400,lineHeight:1.4}}>{q[k]}</div>
-              <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
-                {vals.map(v => (
-                  <button key={v} onClick={()=>setVal(current,k,v)}
-                    style={{width:34,height:34,borderRadius:7,border:'none',background:a[k]===v?'#181818':'#e5e0d8',color:a[k]===v?'white':'#666',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit',opacity:a[k]&&a[k]!==v&&Object.values(a).includes(v)?0.3:1,transition:'all .1s'}}>
-                    {v}
-                  </button>
-                ))}
-              </div>
+        <div className="fu3" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:32}}>
+          {[
+            {icon:'🎯',text:'Vaš delovni slog in komunikacija'},
+            {icon:'💡',text:'Prednosti in razvojne priložnosti'},
+            {icon:'👥',text:'Prispevek k timu in vodenje'},
+            {icon:'📊',text:'Prodajni profil in akcijski plan'},
+          ].map((item,i)=>(
+            <div key={i} style={{background:'white',border:'1px solid #e8e4df',borderRadius:12,padding:'13px 14px',display:'flex',alignItems:'flex-start',gap:10}}>
+              <span style={{fontSize:17,flexShrink:0}}>{item.icon}</span>
+              <span style={{fontSize:12,color:'#4a4a4a',lineHeight:1.55}}>{item.text}</span>
             </div>
           ))}
-          {vstat!=='ok'&&vstat!=='incomplete'&&(
-            <div style={{fontSize:12,color:'#c94030',marginTop:8,padding:'6px 10px',background:'#faeaea',borderRadius:6}}>⚠ {vstat}</div>
-          )}
         </div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-          <button onClick={()=>setCurrent(c=>Math.max(0,c-1))} disabled={current===0}
-            style={{padding:'10px 20px',background:'white',border:'1.5px solid #e5e0d8',borderRadius:10,fontSize:13,color:'#666',cursor:current===0?'not-allowed':'pointer',fontFamily:'inherit',opacity:current===0?.4:1}}>
-            ← Nazaj
+        <div className="fu4">
+          <button className="btn-primary" onClick={()=>setStep('form')} style={{width:'100%',padding:'16px',background:'#1a1a1a',color:'white',border:'none',borderRadius:14,fontSize:16,fontWeight:600,cursor:'pointer',fontFamily:'inherit',letterSpacing:'-0.01em'}}>
+            Začni vprašalnik →
           </button>
-          {current<QUESTIONS.length-1?(
-            <button onClick={()=>vstat==='ok'&&setCurrent(c=>c+1)} disabled={vstat!=='ok'}
-              style={{padding:'10px 24px',background:vstat==='ok'?'#181818':'#ccc',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:vstat==='ok'?'pointer':'not-allowed',fontFamily:'inherit'}}>
-              Naprej →
-            </button>
-          ):(
-            <button onClick={handleSubmit} disabled={!allDone||submitting}
-              style={{padding:'10px 28px',background:allDone&&!submitting?'#2e8a55':'#ccc',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:600,cursor:allDone&&!submitting?'pointer':'not-allowed',fontFamily:'inherit'}}>
-              {submitting?'Posiljam...':'✓ Oddaj vprasalnik'}
-            </button>
-          )}
+          <p style={{textAlign:'center',fontSize:11,color:'#bbb',marginTop:14,lineHeight:1.65}}>
+            5–8 minut · 15 vprašanj · Vaši podatki so zaščiteni
+          </p>
         </div>
-        <div style={{display:'flex',justifyContent:'center',gap:4,flexWrap:'wrap'}}>
-          {QUESTIONS.map((_,i)=>{
-            const s=validate(answers[i])
-            return <div key={i} onClick={()=>setCurrent(i)} style={{width:8,height:8,borderRadius:'50%',cursor:'pointer',transition:'all .2s',background:s==='ok'?'#2e8a55':i===current?'#181818':'#e5e0d8'}}/>
-          })}
+      </div>
+    </div>
+  )
+
+  // ── FORM ──────────────────────────────────────────────────────────────────
+  if(step==='form') return (
+    <div style={{fontFamily:'system-ui,sans-serif',minHeight:'100vh',background:'#fafaf8',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
+      <style>{CSS}</style>
+      <div style={{maxWidth:420,width:'100%'}}>
+        <button onClick={()=>setStep('intro')} style={{background:'none',border:'none',fontSize:13,color:'#aaa',cursor:'pointer',padding:'0 0 20px',display:'flex',alignItems:'center',gap:5,fontFamily:'inherit'}}>
+          ← Nazaj
+        </button>
+        <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:24}}>
+          <ColorWheel size={36}/>
+          <div>
+            <div style={{fontFamily:'Georgia,serif',fontSize:16,fontWeight:700,color:'#1a1a1a'}}>Vaši podatki</div>
+            <div style={{fontSize:11,color:'#aaa'}}>Korak 1 od 2</div>
+          </div>
         </div>
+        <div style={{background:'white',borderRadius:16,padding:'24px',border:'1px solid #e8e4df',marginBottom:12}}>
+          {[
+            {id:'ime',label:'Ime in priimek',placeholder:'Jana Novak',val:ime,set:setIme,type:'text'},
+            {id:'email',label:'E-pošta',placeholder:'jana@podjetje.si',val:email,set:setEmail,type:'email'},
+            {id:'podjetje',label:'Podjetje (neobvezno)',placeholder:'Podjetje d.o.o.',val:podjetje,set:setPodjetje,type:'text'},
+          ].map(f=>(
+            <div key={f.id} style={{marginBottom:16}}>
+              <label style={{display:'block',fontSize:10,fontWeight:700,color:'#999',textTransform:'uppercase',letterSpacing:'.1em',marginBottom:6}}>{f.label}</label>
+              <input type={f.type} value={f.val} onChange={e=>f.set(e.target.value)} placeholder={f.placeholder}
+                style={{width:'100%',padding:'11px 14px',border:'1.5px solid #e5e0d8',borderRadius:10,fontSize:14,fontFamily:'inherit',boxSizing:'border-box',background:'#fafaf8',transition:'border-color .15s,background .15s',color:'#1a1a1a'}}/>
+            </div>
+          ))}
+          <div>
+            <label style={{display:'block',fontSize:10,fontWeight:700,color:'#999',textTransform:'uppercase',letterSpacing:'.1em',marginBottom:6}}>Spol</label>
+            <div style={{display:'flex',gap:8}}>
+              {[{v:'m',l:'Moški'},{v:'z',l:'Ženski'}].map(({v,l})=>(
+                <button key={v} onClick={()=>setSpol(v)} style={{flex:1,padding:'11px',border:'1.5px solid '+(spol===v?'#1a1a1a':'#e5e0d8'),borderRadius:10,fontSize:14,fontFamily:'inherit',background:spol===v?'#1a1a1a':'white',color:spol===v?'white':'#666',cursor:'pointer',fontWeight:spol===v?600:400}}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        {error&&<div style={{color:'#c94030',fontSize:13,marginBottom:10,textAlign:'center',padding:'8px',background:'#faeaea',borderRadius:8}}>{error}</div>}
+        <button className="btn-primary" onClick={()=>{
+          if(!ime.trim()) return setError('Vnesite ime in priimek')
+          if(!email.trim()||!email.includes('@')) return setError('Vnesite veljaven e-naslov')
+          setError(''); setStep('questionnaire')
+        }} style={{width:'100%',padding:'14px',background:'#1a1a1a',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+          Nadaljuj →
+        </button>
+        <p style={{textAlign:'center',fontSize:11,color:'#bbb',marginTop:12,lineHeight:1.65}}>
+          Vaši podatki so zaščiteni in se ne delijo s tretjimi osebami.
+        </p>
+      </div>
+    </div>
+  )
+
+  // ── QUESTIONNAIRE ─────────────────────────────────────────────────────────
+  if(step==='questionnaire') {
+    const q=QUESTIONS[current], a=answers[current], order=orders[current]
+    const vstat=validate(a)
+    const allDone=answers.every(ans=>validate(ans)==='ok')
+    const done=answers.filter(ans=>validate(ans)==='ok').length
+    const pct=Math.round(done/QUESTIONS.length*100)
+
+    return (
+      <div style={{fontFamily:'system-ui,sans-serif',minHeight:'100vh',background:'#fafaf8',padding:'16px 16px 56px'}}>
+        <style>{CSS}</style>
+        <div style={{maxWidth:560,margin:'0 auto'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <ColorWheel size={28}/>
+              <span style={{fontFamily:'Georgia,serif',fontSize:13,fontWeight:700,color:'#1a1a1a'}}>Insights Discovery</span>
+            </div>
+            <div style={{fontSize:12,color:'#888',fontWeight:600,background:'white',border:'1px solid #e8e4df',padding:'4px 10px',borderRadius:20}}>{current+1} / {QUESTIONS.length}</div>
+          </div>
+          <div style={{marginBottom:18}}>
+            <div style={{height:4,background:'#e5e0d8',borderRadius:4,overflow:'hidden',marginBottom:5}}>
+              <div style={{height:'100%',background:'#1a1a1a',width:pct+'%',borderRadius:4,transition:'width .4s ease'}}/>
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#bbb'}}>
+              <span>{pct}% dokončano</span>
+              <span>{done} / {QUESTIONS.length} odgovorjenih</span>
+            </div>
+          </div>
+          <div style={{background:'white',borderRadius:16,padding:'18px',marginBottom:12,border:'1px solid #e8e4df',boxShadow:'0 2px 16px rgba(0,0,0,.04)'}}>
+            <div style={{fontSize:10,fontWeight:700,color:'#aaa',textTransform:'uppercase',letterSpacing:'.1em',marginBottom:12}}>Sklop {current+1} od {QUESTIONS.length}</div>
+            <div style={{fontSize:11,color:'#888',lineHeight:1.65,marginBottom:14,padding:'9px 12px',background:'#f9f7f4',borderRadius:8}}>
+              Razvrstite trditve od <strong style={{color:'#1a1a1a'}}>L</strong> (najmanj podoben) do <strong style={{color:'#1a1a1a'}}>M</strong> (najbolj podoben). Vsako vrednost <strong style={{color:'#1a1a1a'}}>samo enkrat</strong>.
+            </div>
+            {order.map(k=>(
+              <div key={k} style={{marginBottom:10,padding:'12px 13px',background:'#f9f7f4',borderRadius:12,border:'1.5px solid '+(a[k]?'#1a1a1a':'transparent'),transition:'border-color .15s'}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:9}}>
+                  <div style={{width:8,height:8,borderRadius:'50%',background:a[k]?'#1a1a1a':'#d8d3cc',flexShrink:0,transition:'background .15s'}}/>
+                  <div style={{fontSize:13,color:'#1a1a1a',fontWeight:a[k]?600:400,lineHeight:1.4,flex:1}}>{q[k]}</div>
+                  {a[k]&&<div style={{fontSize:9,fontWeight:800,color:'#1a1a1a',background:'#e5e0d8',padding:'2px 8px',borderRadius:20,flexShrink:0,letterSpacing:'0.04em'}}>
+                    {a[k]==='L'?'NAJMANJ':a[k]==='M'?'NAJBOLJ':a[k]}
+                  </div>}
+                </div>
+                <div style={{display:'flex',gap:4}}>
+                  {vals.map(v=>{
+                    const isSel=a[k]===v, isUsed=!isSel&&Object.values(a).includes(v)
+                    return (
+                      <button key={v} onClick={()=>setVal(current,k,v)} style={{
+                        flex:1,height:33,borderRadius:7,border:'none',
+                        background:isSel?'#1a1a1a':isUsed?'#ede9e3':'#e5e0d8',
+                        color:isSel?'white':isUsed?'#ccc':'#666',
+                        fontWeight:700,fontSize:11,cursor:isUsed?'default':'pointer',fontFamily:'inherit',
+                        boxShadow:isSel?'0 2px 8px rgba(0,0,0,0.2)':'none',
+                        transition:'all .1s',opacity:isUsed?0.45:1
+                      }}>{v}</button>
+                    )
+                  })}
+                </div>
+                <div style={{display:'flex',justifyContent:'space-between',fontSize:9,color:'#ccc',marginTop:4}}>
+                  <span>Najmanj podoben</span><span>Najbolj podoben</span>
+                </div>
+              </div>
+            ))}
+            {vstat!=='ok'&&vstat!=='incomplete'&&(
+              <div style={{fontSize:12,color:'#c94030',marginTop:8,padding:'7px 12px',background:'#faeaea',borderRadius:8}}>⚠ {vstat}</div>
+            )}
+          </div>
+          <div style={{display:'flex',gap:10,marginBottom:14}}>
+            <button className="btn-nav" onClick={()=>setCurrent(c=>Math.max(0,c-1))} disabled={current===0} style={{padding:'12px 18px',background:'white',border:'1.5px solid #e5e0d8',borderRadius:12,fontSize:13,color:current===0?'#ccc':'#555',cursor:current===0?'default':'pointer',fontFamily:'inherit',fontWeight:500}}>← Nazaj</button>
+            <div style={{flex:1}}/>
+            {current<QUESTIONS.length-1?(
+              <button className="btn-primary" onClick={()=>vstat==='ok'&&setCurrent(c=>c+1)} disabled={vstat!=='ok'} style={{padding:'12px 24px',background:vstat==='ok'?'#1a1a1a':'#ddd',color:vstat==='ok'?'white':'#aaa',border:'none',borderRadius:12,fontSize:13,fontWeight:600,cursor:vstat==='ok'?'pointer':'default',fontFamily:'inherit'}}>Naprej →</button>
+            ):(
+              <button className="btn-primary" onClick={handleSubmit} disabled={!allDone||submitting} style={{padding:'12px 24px',background:allDone&&!submitting?'#2e8a55':'#ddd',color:allDone&&!submitting?'white':'#aaa',border:'none',borderRadius:12,fontSize:13,fontWeight:600,cursor:allDone&&!submitting?'pointer':'default',fontFamily:'inherit'}}>
+                {submitting?'Pošiljam...':'✓ Oddaj vprašalnik'}
+              </button>
+            )}
+          </div>
+          <div style={{display:'flex',justifyContent:'center',gap:5,flexWrap:'wrap'}}>
+            {QUESTIONS.map((_,i)=>{
+              const s=validate(answers[i])
+              return <button key={i} className="dot-btn" onClick={()=>setCurrent(i)} style={{width:i===current?22:8,height:8,borderRadius:4,border:'none',cursor:'pointer',background:s==='ok'?'#2e8a55':i===current?'#1a1a1a':'#e5e0d8',transition:'all .2s ease',padding:0}}/>
+            })}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── DONE ──────────────────────────────────────────────────────────────────
+  const scores=calcScores(answers)
+  const sorted=['B','R','G','Y'].map(k=>({k,v:scores[k]})).sort((a,b)=>b.v-a.v)
+  const lead=sorted[0]
+
+  return (
+    <div style={{fontFamily:'system-ui,sans-serif',minHeight:'100vh',background:'#fafaf8',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
+      <style>{CSS}</style>
+      <div style={{maxWidth:440,width:'100%',textAlign:'center'}}>
+        <div className="fu" style={{width:76,height:76,borderRadius:'50%',background:CLR_L[lead.k],border:'3px solid '+CLR[lead.k],display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 24px',fontSize:30}}>✓</div>
+        <div className="fu2">
+          <h1 style={{fontFamily:'Georgia,serif',fontSize:30,fontWeight:700,color:'#1a1a1a',marginBottom:10,letterSpacing:'-0.02em'}}>Hvala, {ime.trim().split(' ')[0]}!</h1>
+          <p style={{fontSize:14,color:'#6b6460',lineHeight:1.8,marginBottom:28}}>
+            Vaš vprašalnik je bil uspešno oddan. Vaš osebnostni profil bomo pripravili in vam ga posredovali na <strong style={{color:'#1a1a1a'}}>{email}</strong>.
+          </p>
+        </div>
+        <div className="fu3" style={{background:'white',borderRadius:16,padding:'20px 24px',border:'1px solid #e8e4df',marginBottom:20}}>
+          <div style={{fontSize:10,fontWeight:700,color:'#aaa',textTransform:'uppercase',letterSpacing:'0.12em',marginBottom:16}}>Vaš prevladujoč profil</div>
+          <div style={{display:'flex',justifyContent:'center',gap:10,marginBottom:14}}>
+            {sorted.map(({k,v})=>(
+              <div key={k} style={{textAlign:'center'}}>
+                <div style={{width:46,height:46,borderRadius:'50%',background:CLR_L[k],border:'2.5px solid '+CLR[k],display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 6px'}}>
+                  <span style={{fontSize:13,fontWeight:800,color:CLR[k]}}>{v.toFixed(1)}</span>
+                </div>
+                <div style={{fontSize:9,color:CLR[k],fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em'}}>{k}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{fontSize:12,color:'#888',lineHeight:1.65}}>
+            Vaša primarna energija je <strong style={{color:CLR[lead.k]}}>{CLR_NAME[lead.k]}</strong>.<br/>
+            Kmalu prejmete podroben osebnostni profil.
+          </div>
+        </div>
+        <div style={{fontSize:11,color:'#ccc',lineHeight:1.7}}>Insights Discovery · Osebnostni profil</div>
       </div>
     </div>
   )
