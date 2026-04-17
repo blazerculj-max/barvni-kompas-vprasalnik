@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwnSLsg7eOjkzCtDf-9k3hIOk8tkDWevMxhiue_R-pTiYyb_BSft93f6t1iSphstH16BA/exec'
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw91OXUqsSg4WPzfkvVTdyUzF-6eXT5hroeymTW83eC9veQ7dJvb1CSk9k9MjJTOUOtXA/exec'
 
 const SMAP = {L:0,'1':1,'2':2,'3':3,'4':4,'5':5,M:6}
 const N = 15
@@ -25,14 +25,14 @@ const QUESTIONS = [
 ]
 
 // S/N vprašanja — zaznavanje vs intuicija
-// Vsak sklop: S = zaznavanje, N = intuicija
-// Vrednosti: L=0, 1=1, 2=2, 3=3, 4=4, 5=5, M=6
+// Vsako se oceni neodvisno 0-6, ni obvezno izbrati 0 ali 6
 const SN_QUESTIONS = [
   {S:'Osredotočam se na konkretna dejstva in podrobnosti',N:'Iščem vzorce in skrite možnosti za dejstvi'},
   {S:'Zaupam preizkušenim metodam in preteklim izkušnjam',N:'Rad preizkušam nove pristope in nepreizkušene ideje'},
   {S:'Živim v sedanjosti in rešujem aktualne probleme',N:'Razmišljam o prihodnosti in možnostih ki še niso'},
   {S:'Pri odločanju se oprem na konkretne podatke in dokaze',N:'Pri odločanju pogosto sledim notranjemu občutku'},
 ]
+const SN_VALS = ['0','1','2','3','4','5','6']
 
 const CLR = {B:'#4a7ab5',R:'#c94030',G:'#2e8a55',Y:'#c49a10'}
 const CLR_L = {B:'#e8f0fa',R:'#faeaea',G:'#e6f5ee',Y:'#fdf6e3'}
@@ -86,7 +86,6 @@ export default function App() {
   const [spol, setSpol] = useState('m')
   const [answers, setAnswers] = useState(Array(15).fill(null).map(()=>({B:null,R:null,G:null,Y:null})))
   const [snAnswers, setSnAnswers] = useState(Array(4).fill(null).map(()=>({S:null,N:null})))
-  const [snStep, setSnStep] = useState(0) // 0=barvna vprašanja, 1=SN vprašanja
   const [current, setCurrent] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -96,38 +95,31 @@ export default function App() {
   function setSnVal(qi, side, val) {
     setSnAnswers(prev=>{
       const next = prev.map(a=>({...a}))
-      // Toggle
+      // Toggle — klik na isto vrednost jo počisti
       if(next[qi][side] === val) { next[qi][side] = null; return next }
-      // Počisti drugo stran če enaka vrednost
-      Object.keys(next[qi]).forEach(k=>{ if(next[qi][k]===val) next[qi][k]=null })
       next[qi][side] = val
       return next
     })
   }
 
   function validateSN(ans) {
-    const v = Object.values(ans).filter(x=>x!==null)
-    if(v.length < 2) return 'incomplete'
-    const lc = v.filter(x=>x==='L').length
-    const mc = v.filter(x=>x==='M').length
-    if(lc!==1) return lc+'x L'
-    if(mc!==1) return mc+'x M'
-    if(new Set(v).size!==2) return 'Vrednosti niso različne'
+    // Vsaka trditev mora biti ocenjena (S in N neodvisno)
+    if(ans.S === null || ans.N === null) return 'incomplete'
     return 'ok'
   }
 
   function calcSN(snAnswers) {
     let sRaw = 0, nRaw = 0
     snAnswers.forEach(a=>{
-      sRaw += SMAP[a.S] || 0
-      nRaw += SMAP[a.N] || 0
+      sRaw += parseInt(a.S) || 0
+      nRaw += parseInt(a.N) || 0
     })
     const sScore = parseFloat((sRaw / SN_N).toFixed(2))
     const nScore = parseFloat((nRaw / SN_N).toFixed(2))
     const diff = nScore - sScore
-    if(diff >= 0.5) return {type:'N', score:nScore, label:'Intuicija', diff:parseFloat(diff.toFixed(2))}
-    if(diff <= -0.5) return {type:'S', score:sScore, label:'Zaznavanje', diff:parseFloat(Math.abs(diff).toFixed(2))}
-    return {type:'U', score:Math.max(sScore,nScore), label:'Uravnotežen', diff:parseFloat(Math.abs(diff).toFixed(2))}
+    if(diff >= 0.3) return {type:'N', sScore, nScore, label:'Intuicija', diff:parseFloat(diff.toFixed(2))}
+    if(diff <= -0.3) return {type:'S', sScore, nScore, label:'Zaznavanje', diff:parseFloat(Math.abs(diff).toFixed(2))}
+    return {type:'U', sScore, nScore, label:'Uravnotežen', diff:parseFloat(Math.abs(diff).toFixed(2))}
   }
 
   function setVal(qi,color,val) {
@@ -144,11 +136,13 @@ export default function App() {
     try {
       const scores = calcScores(answers)
       const snResult = calcSN(snAnswers)
-      const snStr = snResult.type==='U' ? 'U='+snResult.score : snResult.type+'='+snResult.score
+      const snStr = snResult.type+'|S='+snResult.sScore+'|N='+snResult.nScore
       const params = new URLSearchParams({
         ime, email, podjetje, spol,
         B: scores.B, G: scores.G, Y: scores.Y, R: scores.R,
-        SN: snStr
+        S: snResult.sScore,
+        N: snResult.nScore,
+        SN: snResult.type==='U'?'U='+snResult.sScore:snResult.type+'='+Math.max(snResult.sScore,snResult.nScore)
       })
       await fetch(APPS_SCRIPT_URL+'?'+params.toString(),{method:'GET',mode:'no-cors'})
       setStep('done')
@@ -296,34 +290,33 @@ export default function App() {
             </div>
             {SN_QUESTIONS.map((q,qi)=>{
               const a = snAnswers[qi]
-              const snVals = ['L','1','2','3','4','5','M']
               return (
                 <div key={qi} style={{marginBottom:12,padding:'12px 13px',background:'#f9f7f4',borderRadius:12,border:'1.5px solid '+(validateSN(a)==='ok'?'#1a1a1a':'transparent'),transition:'border-color .15s'}}>
-                  <div style={{fontSize:10,fontWeight:700,color:'#aaa',marginBottom:10}}>Sklop {qi+1}</div>
+                  <div style={{fontSize:10,fontWeight:700,color:'#aaa',marginBottom:10}}>Trditev {qi+1}</div>
                   {['S','N'].map(side=>(
-                    <div key={side} style={{marginBottom:side==='S'?10:0}}>
-                      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:7}}>
-                        <div style={{width:8,height:8,borderRadius:'50%',background:a[side]?'#1a1a1a':'#d8d3cc',flexShrink:0,transition:'background .15s'}}/>
-                        <div style={{fontSize:12,color:'#1a1a1a',fontWeight:a[side]?600:400,flex:1,lineHeight:1.4}}>{q[side]}</div>
-                        {a[side]&&<div style={{fontSize:9,fontWeight:800,color:'#1a1a1a',background:'#e5e0d8',padding:'2px 8px',borderRadius:20,flexShrink:0}}>
-                          {a[side]==='L'?'NAJMANJ':a[side]==='M'?'NAJBOLJ':a[side]}
-                        </div>}
+                    <div key={side} style={{marginBottom:side==='S'?12:0}}>
+                      <div style={{display:'flex',alignItems:'flex-start',gap:8,marginBottom:7}}>
+                        <div style={{width:8,height:8,borderRadius:'50%',background:a[side]!==null?'#1a1a1a':'#d8d3cc',flexShrink:0,marginTop:4,transition:'background .15s'}}/>
+                        <div style={{fontSize:12,color:'#1a1a1a',fontWeight:a[side]!==null?600:400,flex:1,lineHeight:1.45}}>{q[side]}</div>
+                        {a[side]!==null&&<div style={{fontSize:10,fontWeight:700,color:'#1a1a1a',background:'#e5e0d8',padding:'2px 8px',borderRadius:20,flexShrink:0}}>{a[side]}/6</div>}
                       </div>
                       <div style={{display:'flex',gap:4}}>
-                        {snVals.map(v=>{
-                          const isSel=a[side]===v
-                          const isUsed=!isSel&&Object.values(a).includes(v)
+                        {SN_VALS.map(v=>{
+                          const isSel = a[side]===v
                           return (
                             <button key={v} onClick={()=>setSnVal(qi,side,v)} style={{
                               flex:1,height:30,borderRadius:7,border:'none',
-                              background:isSel?'#1a1a1a':isUsed?'#ede9e3':'#e5e0d8',
-                              color:isSel?'white':isUsed?'#ccc':'#666',
-                              fontWeight:700,fontSize:11,cursor:isUsed?'default':'pointer',fontFamily:'inherit',
+                              background:isSel?'#1a1a1a':'#e5e0d8',
+                              color:isSel?'white':'#666',
+                              fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit',
                               boxShadow:isSel?'0 2px 8px rgba(0,0,0,0.2)':'none',
-                              transition:'all .1s',opacity:isUsed?0.45:1
+                              transition:'all .1s'
                             }}>{v}</button>
                           )
                         })}
+                      </div>
+                      <div style={{display:'flex',justifyContent:'space-between',fontSize:9,color:'#bbb',marginTop:3}}>
+                        <span>Sploh ne drži</span><span>Popolnoma drži</span>
                       </div>
                     </div>
                   ))}
