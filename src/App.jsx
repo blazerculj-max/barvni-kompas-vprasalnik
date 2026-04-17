@@ -306,11 +306,6 @@ export default function App() {
                         }}>{v}</button>
                       )
                     })}
-                  </div>
-                  <div style={{display:'flex',justifyContent:'space-between',fontSize:9,color:'#bbb',marginTop:4}}>
-                    <span>← Zaznavanje</span>
-                    <span>Intuicija →</span>
-                  </div>
                 </div>
               )
             })}
