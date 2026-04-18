@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx7ShJLODvzjhjVZ3s6aSKHEfJfH5XOnfY_GvCLKiJVTCx1FESGaz44Q9Jw6DuUjbxi/exec'
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwrZtQku9a9pR-_q407TVLT_POE-PV8gHfy-8S5h2A_buBXbg2hsQyXUyXe7FHeZjzAvw/exec'
 
 const SMAP = {L:0,'1':1,'2':2,'3':3,'4':4,'5':5,M:6}
 const N = 15
