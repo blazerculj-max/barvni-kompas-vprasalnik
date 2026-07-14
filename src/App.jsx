@@ -132,7 +132,11 @@ export default function App() {
       const params=new URLSearchParams({
         ime, email, podjetje, delovno_mesto: delovnoMesto, spol,
         B:scores.B, G:scores.G, Y:scores.Y, R:scores.R,
-        SN:snResult.snScore
+        SN:snResult.snScore,
+        // Surovi odgovori — da profil v adminu dobi vse izračunane plošče
+        // (zanesljivost, odziv pod pritiskom ...), ne le štirih povprečij.
+        odgovori: JSON.stringify(answers),
+        sn_odgovori: JSON.stringify(snAnswers)
       })
       await fetch(APPS_SCRIPT_URL+'?'+params.toString(),{method:'GET',mode:'no-cors'})
       setStep('done')
