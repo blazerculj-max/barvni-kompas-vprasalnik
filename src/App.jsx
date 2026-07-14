@@ -159,18 +159,18 @@ export default function App() {
 
   // ── INTRO ──────────────────────────────────────────────────────────────────
   if(step==='intro') return (
-    <div style={{fontFamily:'system-ui,sans-serif',minHeight:'100vh',background:'#fafaf8',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
+    <div style={{fontFamily:"'Inter',system-ui,sans-serif",minHeight:'100vh',background:'#fafaf8',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
       <style>{CSS}</style>
       <div style={{maxWidth:480,width:'100%'}}>
         <div className="fu" style={{display:'flex',alignItems:'center',gap:14,marginBottom:40}}>
           <ColorWheel size={52}/>
           <div>
-            <div style={{fontFamily:'Georgia,serif',fontSize:18,fontWeight:700,color:'#1a1a1a'}}>Barvni kompas</div>
+            <div style={{fontFamily:"'Newsreader',Georgia,serif",fontSize:18,fontWeight:700,color:'#1a1a1a'}}>Barvni kompas</div>
             <div style={{fontSize:12,color:'#aaa',marginTop:1}}>Osebnostni profil</div>
           </div>
         </div>
         <div className="fu2">
-          <h1 style={{fontFamily:'Georgia,serif',fontSize:40,fontWeight:700,color:'#1a1a1a',lineHeight:1.05,marginBottom:18,letterSpacing:'-0.025em'}}>Spoznajte<br/>svojo osebnost</h1>
+          <h1 style={{fontFamily:"'Newsreader',Georgia,serif",fontSize:40,fontWeight:700,color:'#1a1a1a',lineHeight:1.05,marginBottom:18,letterSpacing:'-0.025em'}}>Spoznajte<br/>svojo osebnost</h1>
           <p style={{fontSize:15,color:'#6b6460',lineHeight:1.8,marginBottom:32}}>Vprašalnik temelji na Jungovi tipologiji in vam v 5–8 minutah razkrije vaš edinstveni osebnostni profil — kako razmišljate, komunicirate in delujete pod pritiskom.</p>
         </div>
         <div className="fu3" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:32}}>
@@ -191,14 +191,14 @@ export default function App() {
 
   // ── FORM ───────────────────────────────────────────────────────────────────
   if(step==='form') return (
-    <div style={{fontFamily:'system-ui,sans-serif',minHeight:'100vh',background:'#fafaf8',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
+    <div style={{fontFamily:"'Inter',system-ui,sans-serif",minHeight:'100vh',background:'#fafaf8',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
       <style>{CSS}</style>
       <div style={{maxWidth:420,width:'100%'}}>
         <button onClick={()=>setStep('intro')} style={{background:'none',border:'none',fontSize:13,color:'#aaa',cursor:'pointer',padding:'0 0 20px',display:'flex',alignItems:'center',gap:5,fontFamily:'inherit'}}>← Nazaj</button>
         <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:24}}>
           <ColorWheel size={36}/>
           <div>
-            <div style={{fontFamily:'Georgia,serif',fontSize:16,fontWeight:700,color:'#1a1a1a'}}>Vaši podatki</div>
+            <div style={{fontFamily:"'Newsreader',Georgia,serif",fontSize:16,fontWeight:700,color:'#1a1a1a'}}>Vaši podatki</div>
             <div style={{fontSize:11,color:'#aaa'}}>Korak 1 od 2</div>
           </div>
         </div>
@@ -260,14 +260,14 @@ export default function App() {
 
   // ── POLITIKA ZASEBNOSTI ────────────────────────────────────────────────────
   if(step==='zasebnost') return (
-    <div style={{fontFamily:'system-ui,sans-serif',minHeight:'100vh',background:'#fafaf8',padding:'24px'}}>
+    <div style={{fontFamily:"'Inter',system-ui,sans-serif",minHeight:'100vh',background:'#fafaf8',padding:'24px'}}>
       <style>{CSS}</style>
       <div style={{maxWidth:600,margin:'0 auto'}}>
         <button onClick={()=>setStep('form')} style={{background:'none',border:'none',fontSize:13,color:'#aaa',cursor:'pointer',padding:'0 0 20px',display:'flex',alignItems:'center',gap:5,fontFamily:'inherit'}}>← Nazaj na vprašalnik</button>
         <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:28}}>
           <ColorWheel size={36}/>
           <div>
-            <div style={{fontFamily:'Georgia,serif',fontSize:18,fontWeight:700,color:'#1a1a1a'}}>Politika zasebnosti</div>
+            <div style={{fontFamily:"'Newsreader',Georgia,serif",fontSize:18,fontWeight:700,color:'#1a1a1a'}}>Politika zasebnosti</div>
             <div style={{fontSize:11,color:'#aaa'}}>Barvni kompas · Osebnostni profil</div>
           </div>
         </div>
@@ -306,13 +306,13 @@ export default function App() {
     const done=answers.filter(ans=>validate(ans)==='ok').length
     const pct=Math.round(done/QUESTIONS.length*100)
     return (
-      <div style={{fontFamily:'system-ui,sans-serif',minHeight:'100vh',background:'#fafaf8',padding:'16px 16px 56px'}}>
+      <div style={{fontFamily:"'Inter',system-ui,sans-serif",minHeight:'100vh',background:'#fafaf8',padding:'16px 16px 56px'}}>
         <style>{CSS}</style>
         <div style={{maxWidth:560,margin:'0 auto'}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
             <div style={{display:'flex',alignItems:'center',gap:10}}>
               <ColorWheel size={28}/>
-              <span style={{fontFamily:'Georgia,serif',fontSize:13,fontWeight:700,color:'#1a1a1a'}}>Barvni kompas</span>
+              <span style={{fontFamily:"'Newsreader',Georgia,serif",fontSize:13,fontWeight:700,color:'#1a1a1a'}}>Barvni kompas</span>
             </div>
             <div style={{fontSize:12,color:'#888',fontWeight:600,background:'white',border:'1px solid #e8e4df',padding:'4px 10px',borderRadius:20}}>{current+1} / {QUESTIONS.length}</div>
           </div>
@@ -370,13 +370,13 @@ export default function App() {
   if(step==='sn') {
     const allSnDone = snAnswers.every(v=>validateSN(v)==='ok')
     return (
-      <div style={{fontFamily:'system-ui,sans-serif',minHeight:'100vh',background:'#fafaf8',padding:'16px 16px 56px'}}>
+      <div style={{fontFamily:"'Inter',system-ui,sans-serif",minHeight:'100vh',background:'#fafaf8',padding:'16px 16px 56px'}}>
         <style>{CSS}</style>
         <div style={{maxWidth:560,margin:'0 auto'}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
             <div style={{display:'flex',alignItems:'center',gap:10}}>
               <ColorWheel size={28}/>
-              <span style={{fontFamily:'Georgia,serif',fontSize:13,fontWeight:700,color:'#1a1a1a'}}>Barvni kompas</span>
+              <span style={{fontFamily:"'Newsreader',Georgia,serif",fontSize:13,fontWeight:700,color:'#1a1a1a'}}>Barvni kompas</span>
             </div>
             <div style={{fontSize:12,color:'#888',fontWeight:600,background:'white',border:'1px solid #e8e4df',padding:'4px 10px',borderRadius:20}}>2. del · 4 vprašanja</div>
           </div>
@@ -433,12 +433,12 @@ export default function App() {
   const snResult=calcSN(snAnswers)
 
   return (
-    <div style={{fontFamily:'system-ui,sans-serif',minHeight:'100vh',background:'#fafaf8',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
+    <div style={{fontFamily:"'Inter',system-ui,sans-serif",minHeight:'100vh',background:'#fafaf8',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
       <style>{CSS}</style>
       <div style={{maxWidth:440,width:'100%',textAlign:'center'}}>
         <div className="fu" style={{width:76,height:76,borderRadius:'50%',background:CLR_L[lead.k],border:'3px solid '+CLR[lead.k],display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 24px',fontSize:30}}>✓</div>
         <div className="fu2">
-          <h1 style={{fontFamily:'Georgia,serif',fontSize:30,fontWeight:700,color:'#1a1a1a',marginBottom:10,letterSpacing:'-0.02em'}}>Hvala, {ime.trim().split(' ')[0]}!</h1>
+          <h1 style={{fontFamily:"'Newsreader',Georgia,serif",fontSize:30,fontWeight:700,color:'#1a1a1a',marginBottom:10,letterSpacing:'-0.02em'}}>Hvala, {ime.trim().split(' ')[0]}!</h1>
           <p style={{fontSize:14,color:'#6b6460',lineHeight:1.8,marginBottom:28}}>Vaš vprašalnik je bil uspešno oddan. Vaš osebnostni profil bomo pripravili in vam ga posredovali na <strong style={{color:'#1a1a1a'}}>{email}</strong>.</p>
         </div>
         <div className="fu3" style={{background:'white',borderRadius:16,padding:'20px 24px',border:'1px solid #e8e4df',marginBottom:20}}>
