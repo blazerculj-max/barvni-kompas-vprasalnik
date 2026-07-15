@@ -52,9 +52,9 @@ function validate(ans) {
   const v=Object.values(ans).filter(x=>x!==null)
   if(v.length<4) return 'incomplete'
   const lc=v.filter(x=>x==='L').length,mc=v.filter(x=>x==='M').length
-  if(lc!==1) return lc+'x L'
-  if(mc!==1) return mc+'x M'
-  if(new Set(v).size!==4) return 'Vrednosti niso različne'
+  if(lc!==1) return 'Točno eno trditev označite z L (najmanj podobna vam).'
+  if(mc!==1) return 'Točno eno trditev označite z M (najbolj podobna vam).'
+  if(new Set(v).size!==4) return 'Vsaka vrednost le enkrat — preostali dve številki morata biti različni.'
   return 'ok'
 }
 
@@ -327,8 +327,14 @@ export default function App() {
           </div>
           <div style={{background:'white',borderRadius:16,padding:'18px',marginBottom:12,border:'1px solid #e8e4df',boxShadow:'0 2px 16px rgba(0,0,0,.04)'}}>
             <div style={{fontSize:10,fontWeight:700,color:'#aaa',textTransform:'uppercase',letterSpacing:'.1em',marginBottom:12}}>Sklop {current+1} od {QUESTIONS.length}</div>
-            <div style={{fontSize:11,color:'#888',lineHeight:1.65,marginBottom:14,padding:'9px 12px',background:'#f9f7f4',borderRadius:8}}>
-              Razvrstite trditve od <strong style={{color:'#1a1a1a'}}>L</strong> (najmanj podoben) do <strong style={{color:'#1a1a1a'}}>M</strong> (najbolj podoben). Vsako vrednost <strong style={{color:'#1a1a1a'}}>samo enkrat</strong>.
+            <div style={{fontSize:11.5,color:'#6b6460',lineHeight:1.6,marginBottom:14,padding:'11px 13px',background:'#f9f7f4',borderRadius:10,border:'1px solid #ece8e2'}}>
+              <div style={{fontWeight:700,color:'#1a1a1a',marginBottom:6}}>Kako izpolniti ta sklop</div>
+              Vsaki od 4 trditev dodelite oceno, kako podobna vam je. <strong style={{color:'#1a1a1a'}}>Vsako vrednost uporabite le enkrat</strong> — nobena se ne sme ponoviti:
+              <div style={{marginTop:7,display:'flex',flexDirection:'column',gap:4}}>
+                <div>• Točno <strong style={{color:'#1a1a1a'}}>eni</strong> trditvi dodelite <strong style={{color:'#1a1a1a'}}>L</strong> — tisti, ki vam je <strong style={{color:'#1a1a1a'}}>najmanj</strong> podobna.</div>
+                <div>• Točno <strong style={{color:'#1a1a1a'}}>eni</strong> trditvi dodelite <strong style={{color:'#1a1a1a'}}>M</strong> — tisti, ki vam je <strong style={{color:'#1a1a1a'}}>najbolj</strong> podobna.</div>
+                <div>• Preostalima dvema dodelite <strong style={{color:'#1a1a1a'}}>dve različni številki</strong> (npr. 2 in 4) — ne smeta biti enaki.</div>
+              </div>
             </div>
             {order.map(k=>(
               <div key={k} style={{marginBottom:10,padding:'12px 13px',background:'#f9f7f4',borderRadius:12,border:'1.5px solid '+(a[k]?'#1a1a1a':'transparent'),transition:'border-color .15s'}}>
